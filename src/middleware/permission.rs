@@ -2,6 +2,7 @@ use std::future::{ready, Ready};
 use actix_web::{dev::{forward_ready, Service, ServiceRequest, ServiceResponse, Transform}, error, Error, HttpMessage};
 use actix_web::http::{header};
 use futures_util::future::LocalBoxFuture;
+use crate::config::Config;
 use crate::services::auth::decode_token;
 
 pub struct Permission;
@@ -40,10 +41,9 @@ where
     forward_ready!(service);
 
     fn call(&self, req: ServiceRequest) -> Self::Future {
-        println!("Hi from start. You requested: {}", req.path());
-
         if let Some(token) = req.headers().get(header::AUTHORIZATION) {
-            let claims = decode_token(token.to_str().unwrap().to_string());
+            let config = req.app_data::<Config>().expect("Config not found");
+            let claims = decode_token(token.to_str().unwrap().to_string(), config);
             req.extensions_mut().insert(claims);
             let fut = self.service.call(req);
             Box::pin(async move {

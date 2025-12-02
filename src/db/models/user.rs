@@ -1,6 +1,20 @@
+use log::{error, warn};
 use serde::{Deserialize, Serialize};
-use sqlx::{PgPool};
+use sqlx::{Error, PgPool};
 use sqlx::types::time::OffsetDateTime;
+use thiserror::Error;
+use sqlx::Error as SqlxError;
+use crate::db::pg_errors::PgErrorExt;
+
+#[derive(Debug, Error)]
+pub enum UserError {
+    #[error("email already exists")]
+    EmailExists,
+    #[error("username already exists")]
+    UsernameExists,
+    #[error("{0}")]
+    Unknown(String)
+}
 
 #[derive(sqlx::FromRow, Serialize)]
 pub struct User {
@@ -20,16 +34,30 @@ pub struct CreateUser {
     pub password_hash: String
 }
 impl User {
-    pub async fn create(pool: &PgPool, data: CreateUser) -> String {
+    pub async fn create(pool: &PgPool, data: CreateUser) -> Result<User, UserError> {
         let user = sqlx::query_as!(
             User,
             "INSERT INTO users (username, email, password_hash) VALUES ($1, $2, $3) RETURNING *",
             data.username, data.email, data.password_hash
-        ).fetch_one(pool).await;
+        ).fetch_one(pool)
+        .await;
 
         match user {
-            Ok(user) => format!("User id {} name {} created", user.id, user.username),
-            Err(error) => format!("{}", error)
+            Ok(user) => Ok(user),
+            Err(e) if e.is_unique_violation() => {
+                if e.constraint_name_like("username") {
+                    Err(UserError::UsernameExists)
+                } else if e.constraint_name_like("email") {
+                    Err(UserError::EmailExists)
+                } else {
+                    error!("Unexpected unique violation: {}", e);
+                    Err(UserError::Unknown(e.to_string()))
+                }
+            },
+            Err(e) => {
+                error!("Unexpected error when create user: {}", e);
+                Err(UserError::Unknown(e.to_string()))
+            }
         }
     }
 

@@ -1,4 +1,4 @@
-use crate::db::models::user::{CreateUser, User};
+use crate::db::models::user::{CreateUser, User, UserError};
 use crate::handlers::auth::{CreateUserRequest, LoginUserRequest};
 use argon2;
 use argon2::{
@@ -10,6 +10,7 @@ use jsonwebtoken::{EncodingKey, Header, encode, decode, DecodingKey, Validation}
 use serde::{Deserialize, Serialize};
 use sqlx::PgPool;
 use std::ops::Add;
+use crate::config::Config;
 
 const TOKEN_LIFETIME: i64 = 3600;
 
@@ -20,7 +21,7 @@ pub struct Claims {
     exp: usize,
 }
 
-pub async fn register(data: CreateUserRequest, db_pool: &PgPool) -> String {
+pub async fn register(data: CreateUserRequest, db_pool: &PgPool) -> Result<User, UserError> {
     let salt = SaltString::generate(&mut OsRng);
     let argon2 = Argon2::default();
     let password_hash = argon2
@@ -49,20 +50,20 @@ pub async fn authorize(data: LoginUserRequest, db_pool: &PgPool) -> Result<User,
     Ok(user)
 }
 
-pub fn get_token(user: &User) -> String {
+pub fn get_token(user: &User, config: &Config) -> String {
     let claims = Claims {
         sub: user.id.to_string(),
-        exp: Utc::now().add(TimeDelta::seconds(TOKEN_LIFETIME)).timestamp() as usize,
+        exp: Utc::now().add(TimeDelta::seconds(config.jwt_lifetime_seconds)).timestamp() as usize,
     };
 
-    encode(&Header::default(), &claims, &EncodingKey::from_secret("secret".as_ref()))
+    encode(&Header::default(), &claims, &EncodingKey::from_secret(config.jwt_secret.as_ref()))
         .unwrap()
 }
 
-pub fn decode_token(token: String) -> Claims {
+pub fn decode_token(token: String, config: &Config) -> Claims {
     decode(
         &token,
-        &DecodingKey::from_secret("secret".as_ref()),
+        &DecodingKey::from_secret(config.jwt_secret.as_ref()),
         &Validation::default()
     ).unwrap().claims
 }
