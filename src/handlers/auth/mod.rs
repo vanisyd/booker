@@ -5,24 +5,6 @@ use crate::handlers::auth::handlers::register;
 
 mod handlers;
 
-#[derive(Deserialize)]
-pub struct LoginUserRequest {
-    pub email: String,
-    pub password: String
-}
-
-#[derive(Deserialize)]
-pub struct CreateUserRequest {
-    pub username: String,
-    pub email: String,
-    pub password: String
-}
-
-#[derive(Serialize)]
-pub struct LoginUserResponse {
-    pub token: String
-}
-
 pub fn config(cfg: &mut web::ServiceConfig) {
     cfg.service(
         web::scope("")

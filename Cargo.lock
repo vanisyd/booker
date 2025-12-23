@@ -364,6 +364,7 @@ version = "0.1.0"
 dependencies = [
  "actix-web",
  "argon2",
+ "booker-api",
  "chrono",
  "dotenv",
  "env_logger",
@@ -373,10 +374,19 @@ dependencies = [
  "reqwest",
  "serde",
  "serde_json",
+ "serde_urlencoded",
  "sqlx",
  "thiserror",
  "time",
  "tokio",
+]
+
+[[package]]
+name = "booker-api"
+version = "0.1.0"
+dependencies = [
+ "serde",
+ "serde_json",
 ]
 
 [[package]]

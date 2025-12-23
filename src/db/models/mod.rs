@@ -1,5 +1,5 @@
 pub mod user;
-mod book;
+pub mod book;
 mod author;
 mod book_author;
 mod isbn;

@@ -1,5 +1,5 @@
 use crate::db::models::user::{CreateUser, User, UserError};
-use crate::handlers::auth::{CreateUserRequest, LoginUserRequest};
+use booker_api::auth::{CreateUserRequest, LoginUserRequest};
 use argon2;
 use argon2::{
     Argon2,

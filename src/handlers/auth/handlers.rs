@@ -3,7 +3,7 @@ use sqlx::PgPool;
 use crate::{services, AppState};
 use crate::config::Config;
 use crate::db::models::user::UserError;
-use crate::handlers::auth::{CreateUserRequest, LoginUserRequest, LoginUserResponse};
+use booker_api::auth::{CreateUserRequest, LoginUserRequest, LoginUserResponse};
 
 pub async fn auth(
     web::Form(form): web::Form<LoginUserRequest>,
